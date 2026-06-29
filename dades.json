@@ -1,0 +1,42 @@
+[
+  {
+    "nom": "Júlia Reixach",
+    "serie": "Llums de Tardor",
+    "foto": "https://images.unsplash.com/photo-1530177150700-84cd9a3b059b",
+    "ubicacionsUrl": "#",
+    "obres": [
+      {
+        "id": "j1",
+        "titol": "Gòtic",
+        "coords": [41.3820, 2.1760],
+        "img": "https://images.unsplash.com/photo-1530177150700-84cd9a3b059b"
+      },
+      {
+        "id": "j2",
+        "titol": "Eixample",
+        "coords": [41.3910, 2.1620],
+        "img": "https://images.unsplash.com/photo-1551641506-ee5bf4cb45f1?w=400"
+      }
+    ]
+  },
+  {
+    "nom": "Marta Casals",
+    "serie": "Mirades Urbanes",
+    "foto": "https://images.unsplash.com/photo-1490100667990-4fced8021649?w=400",
+    "ubicacionsUrl": "#",
+    "obres": [
+      {
+        "id": "m1",
+        "titol": "Vidre",
+        "coords": [41.3895, 2.1758],
+        "img": "https://images.unsplash.com/photo-1490100667990-4fced8021649?w=400"
+      },
+      {
+        "id": "m2",
+        "titol": "Fotografia i IA imaginen una ciutat més segura, diversa i habitable, evidenciant-ne també les exclusions.",
+        "coords": [41.3950, 2.1810],
+        "img": "https://images.unsplash.com/photo-1502005229762-cf1b2da7c5d6?w=400"
+      }
+    ]
+  }
+]

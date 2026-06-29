@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web del Projecte | Barcelona Arquitectura</title>
+    <style>
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            line-height: 1.6;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        .map-wrapper {
+            position: relative;
+            width: 100%;
+            /* Ajustem l'altura perquè el mapa i el carrossel es vegin bé */
+            height: 700px; 
+            margin: 30px 0;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            border: 1px solid #eee;
+        }
+
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        h2 { border-bottom: 2px solid #4285F4; display: inline-block; padding-bottom: 5px; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Projecte: La ciutat en femení</h1>
+        <p>Explora les instal·lacions fotogràfiques situades en els punts clau de l'arquitectura de Barcelona.</p>
+
+        <div class="map-wrapper">
+            <iframe 
+                src="donesArtistesCarroussel.htm" 
+                title="Mapa interactiu Dones Fotògrafes"
+                loading="lazy"
+                allow="geolocation">
+            </iframe>
+        </div>
+        <h2>Sobre l'exposició</h2>
+        <p>Aquest mapa interactiu permet localitzar cadascuna de les obres. Pots lliscar el carrossel inferior per saltar entre artistes o clicar directament sobre els punts del mapa per obtenir rutes pas a pas.</p>
+    </div>
+
+</body>
+</html>
