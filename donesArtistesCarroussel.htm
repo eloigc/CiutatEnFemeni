@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>BCN 2026 | Mapa Fotògrafes</title>
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <style>
+        :root { --primary: #4285F4; --text: #1a1a1a; }
+        body, html { margin: 0; padding: 0; height: 100%; width: 100%; font-family: sans-serif; overflow: hidden; background: #fff; }
+        
+        #map { height: 100vh; width: 100vw; z-index: 1; }
+
+        .carousel-wrapper { 
+            position: absolute; bottom: 0; left: 0; right: 0; z-index: 2000; 
+            display: flex; align-items: center; padding-bottom: 25px;
+            pointer-events: none; 
+        }
+        
+        .carousel-container { 
+            display: flex; overflow-x: auto; padding: 10px 40px; gap: 12px; 
+            scroll-behavior: smooth; pointer-events: auto;
+            scroll-snap-type: x mandatory;
+        }
+        .carousel-container::-webkit-scrollbar { display: none; }
+
+        .carousel-item {
+            flex: 0 0 140px; background: #fff; border-radius: 12px; overflow: hidden;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.2); cursor: pointer; transition: transform 0.3s;
+            border: 3px solid transparent; scroll-snap-align: center;
+        }
+        .carousel-item img { width: 100%; height: 100px; object-fit: cover; pointer-events: none; }
+        .carousel-item.active { border-color: var(--primary); transform: translateY(-10px); }
+
+        .carousel-item-info {
+            padding: 7px 8px 8px; text-align: center;
+        }
+        .carousel-item-nom {
+            font-size: 12px; font-weight: bold; display: block; margin-bottom: 2px;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .carousel-item-serie {
+            font-size: 10px; color: #888; display: block; margin-bottom: 5px;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+            font-style: italic;
+        }
+        .carousel-item-ubicacions {
+            display: inline-block;
+            color: var(--primary);
+            font-size: 10px;
+            font-weight: bold;
+            text-decoration: none;
+            letter-spacing: 0.03em;
+        }
+        .carousel-item-ubicacions:hover { text-decoration: underline; }
+
+        .custom-marker {
+            width: 32px; height: 32px; border-radius: 50%; border: 2px solid white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3); background-size: cover; background-position: center;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        
+        .marker-active { 
+            transform: scale(1.4); 
+            border-color: var(--primary); 
+            box-shadow: 0 0 20px 8px rgba(66, 133, 244, 0.6);
+            z-index: 999 !important; 
+        }
+
+        .popup-card { text-align: center; width: 160px; }
+        .popup-card img { width: 100%; border-radius: 8px; margin-top: 8px; height: 100px; object-fit: cover; }
+        .btn-route { background: var(--primary); color: white !important; padding: 8px 12px; border-radius: 20px; text-decoration: none; font-size: 11px; display: block; margin-top: 8px; }
+
+        .nav-arrow { pointer-events: auto; background: white; border: none; width: 35px; height: 35px; border-radius: 50%; box-shadow: 0 2px 10px rgba(0,0,0,0.2); cursor: pointer; position: absolute; z-index: 2001; }
+        .nav-prev { left: 5px; } .nav-next { right: 5px; }
+
+        /* Missatge de càrrega */
+        #loading-msg {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            z-index: 9999; background: white; padding: 20px 32px; border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15); font-size: 14px; color: #555;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="map"></div>
+    <div id="loading-msg">Carregant dades…</div>
+
+    <div class="carousel-wrapper">
+        <button class="nav-arrow nav-prev" onclick="scrollCarousel(-1)">‹</button>
+        <div class="carousel-container" id="carousel"></div>
+        <button class="nav-arrow nav-next" onclick="scrollCarousel(1)">›</button>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <script>
+        // ╔══════════════════════════════════════════════════════════════════════╗
+        // ║  DADES DE LES ARTISTES — edita aquí per afegir o modificar          ║
+        // ║                                                                      ║
+        // ║  Camps de cada artista:                                              ║
+        // ║    nom           → nom complet de l'artista                          ║
+        // ║    serie         → títol de la sèrie fotogràfica                     ║
+        // ║    foto          → URL de la foto de l'artista (targeta carrussel)   ║
+        // ║    ubicacionsUrl → URL de la pàgina d'ubicacions (enllaç a la card)  ║
+        // ║    obres[]       → llista de fotografies amb:                        ║
+        // ║      id          → identificador únic                                ║
+        // ║      titol       → títol o descripció de la fotografia               ║
+        // ║      coords      → [latitud, longitud] al mapa                       ║
+        // ║      img         → URL de la imatge de la fotografia                 ║
+        // ╚══════════════════════════════════════════════════════════════════════╝
+        const artistes = [
+  {
+    "nom": "la ciutat en femení",
+    "serie": "ubicació dels mupis",
+    "foto": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png",
+    "ubicacionsUrl": "#",
+    "obres": [
+      {
+        "id": "1",
+        "titol": "",
+        "coords": [
+          41.379,
+          2.1778
+        ],
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "2",
+        "titol": "",
+        "coords": [
+          41.3738,
+          2.1697
+        ],
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "3",
+        "titol": "",
+        "coords": [
+          41.3795,
+          2.1851
+        ],
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "4",
+        "titol": "",
+        "coords": [
+          41.3752,
+          2.1729
+        ],
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "5",
+        "titol": "",
+        "coords": [
+          41.3968,
+          2.1965
+        ],
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "6",
+        "titol": "",
+        "coords": [
+          41.3745,
+          2.1619
+        ],
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "7",
+        "titol": "",
+        "coords": [
+          41.4059,
+          2.1706
+        ],
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "8",
+        "titol": "",
+        "coords": [
+          41.3984,
+          2.1736
+        ],
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "9",
+        "titol": "",
+        "coords": [
+          41.3915,
+          2.17
+        ],
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "10",
+        "titol": "",
+        "coords": [
+          41.3935,
+          2.1587
+        ],
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "11",
+        "titol": "",
+        "coords": [
+          41.3892,
+          2.1559
+        ],
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "12",
+        "titol": "",
+        "coords": [
+          41.3921,
+          2.1723
+        ],
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "13",
+        "titol": "",
+        "coords": [
+          41.3928,
+          2.1638
+        ],
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "14",
+        "titol": "",
+        "coords": [
+          41.3893,
+          2.1744
+        ],
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "15",
+        "titol": "",
+        "coords": [
+          41.3745,
+          2.1455
+        ],
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "16",
+        "titol": "",
+        "coords": [
+          41.373,
+          2.1379
+        ],
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "17",
+        "titol": "",
+        "coords": [
+          41.3636,
+          2.1526
+        ],
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "18",
+        "titol": "",
+        "coords": [
+          41.3742,
+          2.1749
+        ],
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "19",
+        "titol": "",
+        "coords": [
+          41.3793,
+          2.1339
+        ],
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "20",
+        "titol": "",
+        "coords": [
+          41.3826,
+          2.1372
+        ],
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "21",
+        "titol": "",
+        "coords": [
+          41.3881,
+          2.1243
+        ],
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "22",
+        "titol": "",
+        "coords": [
+          41.3878,
+          2.1482
+        ],
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "23",
+        "titol": "",
+        "coords": [
+          41.3877,
+          2.1198
+        ],
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "24",
+        "titol": "",
+        "coords": [
+          41.3869,
+          2.1166
+        ],
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "25",
+        "titol": "",
+        "coords": [
+          41.3951,
+          2.1495
+        ],
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "26",
+        "titol": "",
+        "coords": [
+          41.3873,
+          2.1265
+        ],
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "27",
+        "titol": "",
+        "coords": [
+          41.3984,
+          2.1251
+        ],
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "28",
+        "titol": "",
+        "coords": [
+          41.4008,
+          2.1318
+        ],
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "29",
+        "titol": "",
+        "coords": [
+          41.4046,
+          2.1329
+        ],
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "30",
+        "titol": "",
+        "coords": [
+          41.4057,
+          2.1443
+        ],
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "31",
+        "titol": "",
+        "coords": [
+          41.4054,
+          2.1446
+        ],
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "32",
+        "titol": "",
+        "coords": [
+          41.4164,
+          2.1097
+        ],
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "33",
+        "titol": "",
+        "coords": [
+          41.4057,
+          2.1403
+        ],
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "34",
+        "titol": "",
+        "coords": [
+          41.4248,
+          2.1547
+        ],
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "35",
+        "titol": "",
+        "coords": [
+          41.4252,
+          2.1682
+        ],
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "36",
+        "titol": "",
+        "coords": [
+          41.4271,
+          2.1699
+        ],
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "37",
+        "titol": "",
+        "coords": [
+          41.435,
+          2.1754
+        ],
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "38",
+        "titol": "",
+        "coords": [
+          41.4418,
+          2.1659
+        ],
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "39",
+        "titol": "",
+        "coords": [
+          41.4306,
+          2.1792
+        ],
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "40",
+        "titol": "",
+        "coords": [
+          41.4255,
+          2.1768
+        ],
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "41",
+        "titol": "",
+        "coords": [
+          41.4278,
+          2.1796
+        ],
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "42",
+        "titol": "",
+        "coords": [
+          41.4393,
+          2.1817
+        ],
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "43",
+        "titol": "",
+        "coords": [
+          41.4188,
+          2.1735
+        ],
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "44",
+        "titol": "",
+        "coords": [
+          41.4355,
+          2.1873
+        ],
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "45",
+        "titol": "",
+        "coords": [
+          41.4551,
+          2.182
+        ],
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "46",
+        "titol": "",
+        "coords": [
+          41.4323,
+          2.1789
+        ],
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "47",
+        "titol": "",
+        "coords": [
+          41.4468,
+          2.1868
+        ],
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "48",
+        "titol": "",
+        "coords": [
+          41.4492,
+          2.1924
+        ],
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "49",
+        "titol": "",
+        "coords": [
+          41.442,
+          2.1959
+        ],
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "50",
+        "titol": "",
+        "coords": [
+          41.4389,
+          2.1964
+        ],
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "51",
+        "titol": "",
+        "coords": [
+          41.4453,
+          2.2018
+        ],
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "52",
+        "titol": "",
+        "coords": [
+          41.4354,
+          2.2039
+        ],
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "53",
+        "titol": "",
+        "coords": [
+          41.4475,
+          2.2164
+        ],
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "54",
+        "titol": "",
+        "coords": [
+          41.4335,
+          2.2099
+        ],
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "55",
+        "titol": "",
+        "coords": [
+          41.4138,
+          2.1955
+        ],
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "56",
+        "titol": "",
+        "coords": [
+          41.4044,
+          2.1929
+        ],
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "57",
+        "titol": "",
+        "coords": [
+          41.4054,
+          2.2107
+        ],
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "58",
+        "titol": "",
+        "coords": [
+          41.4045,
+          2.2149
+        ],
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "59",
+        "titol": "",
+        "coords": [
+          41.412,
+          2.2087
+        ],
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "60",
+        "titol": "",
+        "coords": [
+          41.4018,
+          2.2034
+        ],
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "61",
+        "titol": "",
+        "coords": [
+          41.3989,
+          2.1935
+        ],
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "62",
+        "titol": "",
+        "coords": [
+          41.4183,
+          2.212
+        ],
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "63",
+        "titol": "",
+        "coords": [
+          41.4016,
+          2.2004
+        ],
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "64",
+        "titol": "",
+        "coords": [
+          41.4039,
+          2.1808
+        ],
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "65",
+        "titol": "",
+        "coords": [
+          41.3924,
+          2.1968
+        ],
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "66",
+        "titol": "",
+        "coords": [
+          41.3913,
+          2.2003
+        ],
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      }
+    ]
+  }
+];
+        // ══════════════════════════════════════════════════════════════════════
+
+        const map = L.map('map', { zoomControl: false, tap: false }).setView([41.390, 2.170], 13);
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { attribution: '© CARTO' }).addTo(map);
+
+        const carousel = document.getElementById('carousel');
+        let allMarkers = [];
+
+        function renderArtistes() {
+            artistes.forEach((artista, aIdx) => {
+                artista.markers = [];
+                artista.obres.forEach((obra) => {
+                    const icon = L.divIcon({
+                        className: 'custom-div-icon',
+                        html: `<div class="custom-marker" style="background-image: url('${obra.img}');"></div>`,
+                        iconSize: [32, 32], iconAnchor: [16, 16]
+                    });
+                    
+                    const m = L.marker(obra.coords, { icon: icon }).addTo(map);
+                    
+                    const popupContent = `
+                        <div class="popup-card">
+                            <strong>${artista.nom}</strong><br>
+                            <small>${obra.titol}</small>
+                            <img src="${obra.img}">
+                            <a href="https://www.google.com/maps/dir/?api=1&destination=${obra.coords[0]},${obra.coords[1]}" target="_blank" class="btn-route">Com arribar</a>
+                        </div>
+                    `;
+
+                    m.bindPopup(popupContent, { 
+                        offset: [0, -10],
+                        autoPan: true,
+                        autoPanPadding: L.point(50, 150)
+                    });
+                    
+                    m.on('click', () => {
+                        seleccionarArtista(aIdx, false);
+                    });
+
+                    artista.markers.push(m);
+                    allMarkers.push(m);
+                });
+
+                // ── Targeta de l'artista al carrussel ──────────────────────────
+                const serieText = artista.serie ? artista.serie : '&nbsp;';
+                const ubicUrl   = artista.ubicacionsUrl || '#';
+                const numUbic   = artista.obres.length;
+
+                const item = document.createElement('div');
+                item.className = 'carousel-item';
+                item.innerHTML = `
+                    <img src="${artista.foto || artista.obres[0].img}" alt="${artista.nom}">
+                    <div class="carousel-item-info">
+                        <span class="carousel-item-nom">${artista.nom}</span>
+                        <span class="carousel-item-serie">${serieText}</span>
+                        <a class="carousel-item-ubicacions"
+                           href="${ubicUrl}"
+                           target="_blank"
+                           onclick="event.stopPropagation();">
+                            ${numUbic} UBICACIONS
+                        </a>
+                    </div>
+                `;
+                item.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    seleccionarArtista(aIdx, true);
+                });
+                carousel.appendChild(item);
+                artista.element = item;
+            });
+        }
+
+        function seleccionarArtista(index, moveMap) {
+            const artista = artistes[index];
+            
+            document.querySelectorAll('.carousel-item').forEach(el => el.classList.remove('active'));
+            artista.element.classList.add('active');
+            
+            artista.element.scrollIntoView({ 
+                behavior: 'smooth', 
+                inline: 'center', 
+                block: 'nearest' 
+            });
+
+            document.querySelectorAll('.custom-marker').forEach(el => el.classList.remove('marker-active'));
+            artista.markers.forEach(m => {
+                const elementHtml = m.getElement().querySelector('.custom-marker');
+                if (elementHtml) elementHtml.classList.add('marker-active');
+            });
+
+            if (moveMap) {
+                const group = new L.featureGroup(artista.markers);
+                map.fitBounds(group.getBounds(), { padding: [100, 200], maxZoom: 15 });
+            }
+        }
+
+        function scrollCarousel(dir) {
+            carousel.scrollBy({ left: dir * 200, behavior: 'smooth' });
+        }
+
+        // ── Inicialització ────────────────────────────────────────────────────
+        document.getElementById('loading-msg').style.display = 'none';
+        renderArtistes();
+        setTimeout(() => seleccionarArtista(0, true), 500);
+    </script>
+</body>
+</html>
