@@ -1,0 +1,604 @@
+[
+  {
+    "nom": "la ciutat en femení",
+    "serie": "ubicació dels mupis",
+    "foto": "https://github.com/eloigc/CiutatEnFemeni/blob/main/portadaMapa.png",
+    "ubicacionsUrl": "#",
+    "obres": [
+      {
+        "id": "1",
+        "titol": "",
+        "coords": [
+          41.379,
+          2.1778
+        ],
+        "img": "https://github.com/eloigc/CiutatEnFemeni/blob/main/portadaMapa.png"
+      },
+      {
+        "id": "2",
+        "titol": "",
+        "coords": [
+          41.3738,
+          2.1697
+        ],
+        "img": "https://github.com/eloigc/CiutatEnFemeni/blob/main/portadaMapa.png"
+      },
+      {
+        "id": "3",
+        "titol": "",
+        "coords": [
+          41.3795,
+          2.1851
+        ],
+        "img": "https://github.com/eloigc/CiutatEnFemeni/blob/main/portadaMapa.png"
+      },
+      {
+        "id": "4",
+        "titol": "",
+        "coords": [
+          41.3752,
+          2.1729
+        ],
+        "img": "https://github.com/eloigc/CiutatEnFemeni/blob/main/portadaMapa.png"
+      },
+      {
+        "id": "5",
+        "titol": "",
+        "coords": [
+          41.3968,
+          2.1965
+        ],
+        "img": "https://github.com/eloigc/CiutatEnFemeni/blob/main/portadaMapa.png"
+      },
+      {
+        "id": "6",
+        "titol": "",
+        "coords": [
+          41.3745,
+          2.1619
+        ],
+        "img": "https://github.com/eloigc/CiutatEnFemeni/blob/main/portadaMapa.png"
+      },
+      {
+        "id": "7",
+        "titol": "",
+        "coords": [
+          41.4059,
+          2.1706
+        ],
+        "img": "https://github.com/eloigc/CiutatEnFemeni/blob/main/portadaMapa.png"
+      },
+      {
+        "id": "8",
+        "titol": "",
+        "coords": [
+          41.3984,
+          2.1736
+        ],
+        "img": "https://github.com/eloigc/CiutatEnFemeni/blob/main/portadaMapa.png"
+      },
+      {
+        "id": "9",
+        "titol": "",
+        "coords": [
+          41.3915,
+          2.17
+        ],
+        "img": "https://github.com/eloigc/CiutatEnFemeni/blob/main/portadaMapa.png"
+      },
+      {
+        "id": "10",
+        "titol": "",
+        "coords": [
+          41.3935,
+          2.1587
+        ],
+        "img": "https://github.com/eloigc/CiutatEnFemeni/blob/main/portadaMapa.png"
+      },
+      {
+        "id": "11",
+        "titol": "",
+        "coords": [
+          41.3892,
+          2.1559
+        ],
+        "img": "https://github.com/eloigc/CiutatEnFemeni/blob/main/portadaMapa.png"
+      },
+      {
+        "id": "12",
+        "titol": "",
+        "coords": [
+          41.3921,
+          2.1723
+        ],
+        "img": "https://github.com/eloigc/CiutatEnFemeni/blob/main/portadaMapa.png"
+      },
+      {
+        "id": "13",
+        "titol": "",
+        "coords": [
+          41.3928,
+          2.1638
+        ],
+        "img": "https://github.com/eloigc/CiutatEnFemeni/blob/main/portadaMapa.png"
+      },
+      {
+        "id": "14",
+        "titol": "",
+        "coords": [
+          41.3893,
+          2.1744
+        ],
+        "img": "https://github.com/eloigc/CiutatEnFemeni/blob/main/portadaMapa.png"
+      },
+      {
+        "id": "15",
+        "titol": "",
+        "coords": [
+          41.3745,
+          2.1455
+        ],
+        "img": "https://github.com/eloigc/CiutatEnFemeni/blob/main/portadaMapa.png"
+      },
+      {
+        "id": "16",
+        "titol": "",
+        "coords": [
+          41.373,
+          2.1379
+        ],
+        "img": "https://github.com/eloigc/CiutatEnFemeni/blob/main/portadaMapa.png"
+      },
+      {
+        "id": "17",
+        "titol": "",
+        "coords": [
+          41.3636,
+          2.1526
+        ],
+        "img": "https://github.com/eloigc/CiutatEnFemeni/blob/main/portadaMapa.png"
+      },
+      {
+        "id": "18",
+        "titol": "",
+        "coords": [
+          41.3742,
+          2.1749
+        ],
+        "img": "https://github.com/eloigc/CiutatEnFemeni/blob/main/portadaMapa.png"
+      },
+      {
+        "id": "19",
+        "titol": "",
+        "coords": [
+          41.3793,
+          2.1339
+        ],
+        "img": "https://github.com/eloigc/CiutatEnFemeni/blob/main/portadaMapa.png"
+      },
+      {
+        "id": "20",
+        "titol": "",
+        "coords": [
+          41.3826,
+          2.1372
+        ],
+        "img": "https://github.com/eloigc/CiutatEnFemeni/blob/main/portadaMapa.png"
+      },
+      {
+        "id": "21",
+        "titol": "",
+        "coords": [
+          41.3881,
+          2.1243
+        ],
+        "img": "https://github.com/eloigc/CiutatEnFemeni/blob/main/portadaMapa.png"
+      },
+      {
+        "id": "22",
+        "titol": "",
+        "coords": [
+          41.3878,
+          2.1482
+        ],
+        "img": "https://github.com/eloigc/CiutatEnFemeni/blob/main/portadaMapa.png"
+      },
+      {
+        "id": "23",
+        "titol": "",
+        "coords": [
+          41.3877,
+          2.1198
+        ],
+        "img": "https://github.com/eloigc/CiutatEnFemeni/blob/main/portadaMapa.png"
+      },
+      {
+        "id": "24",
+        "titol": "",
+        "coords": [
+          41.3869,
+          2.1166
+        ],
+        "img": "https://github.com/eloigc/CiutatEnFemeni/blob/main/portadaMapa.png"
+      },
+      {
+        "id": "25",
+        "titol": "",
+        "coords": [
+          41.3951,
+          2.1495
+        ],
+        "img": "https://github.com/eloigc/CiutatEnFemeni/blob/main/portadaMapa.png"
+      },
+      {
+        "id": "26",
+        "titol": "",
+        "coords": [
+          41.3873,
+          2.1265
+        ],
+        "img": "https://github.com/eloigc/CiutatEnFemeni/blob/main/portadaMapa.png"
+      },
+      {
+        "id": "27",
+        "titol": "",
+        "coords": [
+          41.3984,
+          2.1251
+        ],
+        "img": "https://github.com/eloigc/CiutatEnFemeni/blob/main/portadaMapa.png"
+      },
+      {
+        "id": "28",
+        "titol": "",
+        "coords": [
+          41.4008,
+          2.1318
+        ],
+        "img": "https://github.com/eloigc/CiutatEnFemeni/blob/main/portadaMapa.png"
+      },
+      {
+        "id": "29",
+        "titol": "",
+        "coords": [
+          41.4046,
+          2.1329
+        ],
+        "img": "https://github.com/eloigc/CiutatEnFemeni/blob/main/portadaMapa.png"
+      },
+      {
+        "id": "30",
+        "titol": "",
+        "coords": [
+          41.4057,
+          2.1443
+        ],
+        "img": "https://github.com/eloigc/CiutatEnFemeni/blob/main/portadaMapa.png"
+      },
+      {
+        "id": "31",
+        "titol": "",
+        "coords": [
+          41.4054,
+          2.1446
+        ],
+        "img": "https://github.com/eloigc/CiutatEnFemeni/blob/main/portadaMapa.png"
+      },
+      {
+        "id": "32",
+        "titol": "",
+        "coords": [
+          41.4164,
+          2.1097
+        ],
+        "img": "https://github.com/eloigc/CiutatEnFemeni/blob/main/portadaMapa.png"
+      },
+      {
+        "id": "33",
+        "titol": "",
+        "coords": [
+          41.4057,
+          2.1403
+        ],
+        "img": "https://github.com/eloigc/CiutatEnFemeni/blob/main/portadaMapa.png"
+      },
+      {
+        "id": "34",
+        "titol": "",
+        "coords": [
+          41.4248,
+          2.1547
+        ],
+        "img": "https://github.com/eloigc/CiutatEnFemeni/blob/main/portadaMapa.png"
+      },
+      {
+        "id": "35",
+        "titol": "",
+        "coords": [
+          41.4252,
+          2.1682
+        ],
+        "img": "https://github.com/eloigc/CiutatEnFemeni/blob/main/portadaMapa.png"
+      },
+      {
+        "id": "36",
+        "titol": "",
+        "coords": [
+          41.4271,
+          2.1699
+        ],
+        "img": "https://github.com/eloigc/CiutatEnFemeni/blob/main/portadaMapa.png"
+      },
+      {
+        "id": "37",
+        "titol": "",
+        "coords": [
+          41.435,
+          2.1754
+        ],
+        "img": "https://github.com/eloigc/CiutatEnFemeni/blob/main/portadaMapa.png"
+      },
+      {
+        "id": "38",
+        "titol": "",
+        "coords": [
+          41.4418,
+          2.1659
+        ],
+        "img": "https://github.com/eloigc/CiutatEnFemeni/blob/main/portadaMapa.png"
+      },
+      {
+        "id": "39",
+        "titol": "",
+        "coords": [
+          41.4306,
+          2.1792
+        ],
+        "img": "https://github.com/eloigc/CiutatEnFemeni/blob/main/portadaMapa.png"
+      },
+      {
+        "id": "40",
+        "titol": "",
+        "coords": [
+          41.4255,
+          2.1768
+        ],
+        "img": "https://github.com/eloigc/CiutatEnFemeni/blob/main/portadaMapa.png"
+      },
+      {
+        "id": "41",
+        "titol": "",
+        "coords": [
+          41.4278,
+          2.1796
+        ],
+        "img": "https://github.com/eloigc/CiutatEnFemeni/blob/main/portadaMapa.png"
+      },
+      {
+        "id": "42",
+        "titol": "",
+        "coords": [
+          41.4393,
+          2.1817
+        ],
+        "img": "https://github.com/eloigc/CiutatEnFemeni/blob/main/portadaMapa.png"
+      },
+      {
+        "id": "43",
+        "titol": "",
+        "coords": [
+          41.4188,
+          2.1735
+        ],
+        "img": "https://github.com/eloigc/CiutatEnFemeni/blob/main/portadaMapa.png"
+      },
+      {
+        "id": "44",
+        "titol": "",
+        "coords": [
+          41.4355,
+          2.1873
+        ],
+        "img": "https://github.com/eloigc/CiutatEnFemeni/blob/main/portadaMapa.png"
+      },
+      {
+        "id": "45",
+        "titol": "",
+        "coords": [
+          41.4551,
+          2.182
+        ],
+        "img": "https://github.com/eloigc/CiutatEnFemeni/blob/main/portadaMapa.png"
+      },
+      {
+        "id": "46",
+        "titol": "",
+        "coords": [
+          41.4323,
+          2.1789
+        ],
+        "img": "https://github.com/eloigc/CiutatEnFemeni/blob/main/portadaMapa.png"
+      },
+      {
+        "id": "47",
+        "titol": "",
+        "coords": [
+          41.4468,
+          2.1868
+        ],
+        "img": "https://github.com/eloigc/CiutatEnFemeni/blob/main/portadaMapa.png"
+      },
+      {
+        "id": "48",
+        "titol": "",
+        "coords": [
+          41.4492,
+          2.1924
+        ],
+        "img": "https://github.com/eloigc/CiutatEnFemeni/blob/main/portadaMapa.png"
+      },
+      {
+        "id": "49",
+        "titol": "",
+        "coords": [
+          41.442,
+          2.1959
+        ],
+        "img": "https://github.com/eloigc/CiutatEnFemeni/blob/main/portadaMapa.png"
+      },
+      {
+        "id": "50",
+        "titol": "",
+        "coords": [
+          41.4389,
+          2.1964
+        ],
+        "img": "https://github.com/eloigc/CiutatEnFemeni/blob/main/portadaMapa.png"
+      },
+      {
+        "id": "51",
+        "titol": "",
+        "coords": [
+          41.4453,
+          2.2018
+        ],
+        "img": "https://github.com/eloigc/CiutatEnFemeni/blob/main/portadaMapa.png"
+      },
+      {
+        "id": "52",
+        "titol": "",
+        "coords": [
+          41.4354,
+          2.2039
+        ],
+        "img": "https://github.com/eloigc/CiutatEnFemeni/blob/main/portadaMapa.png"
+      },
+      {
+        "id": "53",
+        "titol": "",
+        "coords": [
+          41.4475,
+          2.2164
+        ],
+        "img": "https://github.com/eloigc/CiutatEnFemeni/blob/main/portadaMapa.png"
+      },
+      {
+        "id": "54",
+        "titol": "",
+        "coords": [
+          41.4335,
+          2.2099
+        ],
+        "img": "https://github.com/eloigc/CiutatEnFemeni/blob/main/portadaMapa.png"
+      },
+      {
+        "id": "55",
+        "titol": "",
+        "coords": [
+          41.4138,
+          2.1955
+        ],
+        "img": "https://github.com/eloigc/CiutatEnFemeni/blob/main/portadaMapa.png"
+      },
+      {
+        "id": "56",
+        "titol": "",
+        "coords": [
+          41.4044,
+          2.1929
+        ],
+        "img": "https://github.com/eloigc/CiutatEnFemeni/blob/main/portadaMapa.png"
+      },
+      {
+        "id": "57",
+        "titol": "",
+        "coords": [
+          41.4054,
+          2.2107
+        ],
+        "img": "https://github.com/eloigc/CiutatEnFemeni/blob/main/portadaMapa.png"
+      },
+      {
+        "id": "58",
+        "titol": "",
+        "coords": [
+          41.4045,
+          2.2149
+        ],
+        "img": "https://github.com/eloigc/CiutatEnFemeni/blob/main/portadaMapa.png"
+      },
+      {
+        "id": "59",
+        "titol": "",
+        "coords": [
+          41.412,
+          2.2087
+        ],
+        "img": "https://github.com/eloigc/CiutatEnFemeni/blob/main/portadaMapa.png"
+      },
+      {
+        "id": "60",
+        "titol": "",
+        "coords": [
+          41.4018,
+          2.2034
+        ],
+        "img": "https://github.com/eloigc/CiutatEnFemeni/blob/main/portadaMapa.png"
+      },
+      {
+        "id": "61",
+        "titol": "",
+        "coords": [
+          41.3989,
+          2.1935
+        ],
+        "img": "https://github.com/eloigc/CiutatEnFemeni/blob/main/portadaMapa.png"
+      },
+      {
+        "id": "62",
+        "titol": "",
+        "coords": [
+          41.4183,
+          2.212
+        ],
+        "img": "https://github.com/eloigc/CiutatEnFemeni/blob/main/portadaMapa.png"
+      },
+      {
+        "id": "63",
+        "titol": "",
+        "coords": [
+          41.4016,
+          2.2004
+        ],
+        "img": "https://github.com/eloigc/CiutatEnFemeni/blob/main/portadaMapa.png"
+      },
+      {
+        "id": "64",
+        "titol": "",
+        "coords": [
+          41.4039,
+          2.1808
+        ],
+        "img": "https://github.com/eloigc/CiutatEnFemeni/blob/main/portadaMapa.png"
+      },
+      {
+        "id": "65",
+        "titol": "",
+        "coords": [
+          41.3924,
+          2.1968
+        ],
+        "img": "https://github.com/eloigc/CiutatEnFemeni/blob/main/portadaMapa.png"
+      },
+      {
+        "id": "66",
+        "titol": "",
+        "coords": [
+          41.3913,
+          2.2003
+        ],
+        "img": "https://github.com/eloigc/CiutatEnFemeni/blob/main/portadaMapa.png"
+      }
+    ]
+  }
+]
