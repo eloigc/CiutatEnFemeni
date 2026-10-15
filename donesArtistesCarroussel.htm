@@ -1,0 +1,893 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>BCN 2026 | Mapa Fotògrafes</title>
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <style>
+        :root { --primary: #4285F4; --text: #1a1a1a; }
+        body, html { margin: 0; padding: 0; height: 100%; width: 100%; font-family: sans-serif; overflow: hidden; background: #fff; }
+        
+        #map { height: 100vh; width: 100vw; z-index: 1; }
+
+        .carousel-wrapper { 
+            position: absolute; bottom: 0; left: 0; right: 0; z-index: 2000; 
+            display: flex; align-items: center; padding-bottom: 25px;
+            pointer-events: none; 
+        }
+        
+        .carousel-container { 
+            display: flex; overflow-x: auto; padding: 10px 40px; gap: 12px; 
+            scroll-behavior: smooth; pointer-events: auto;
+            scroll-snap-type: x mandatory;
+        }
+        .carousel-container::-webkit-scrollbar { display: none; }
+
+        .carousel-item {
+            flex: 0 0 140px; background: #fff; border-radius: 12px; overflow: hidden;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.2); cursor: pointer; transition: transform 0.3s;
+            border: 3px solid transparent; scroll-snap-align: center;
+        }
+        .carousel-item img { width: 100%; height: 100px; object-fit: cover; pointer-events: none; }
+        .carousel-item.active { border-color: var(--primary); transform: translateY(-10px); }
+
+        .carousel-item-info {
+            padding: 7px 8px 8px; text-align: center;
+        }
+        .carousel-item-nom {
+            font-size: 12px; font-weight: bold; display: block; margin-bottom: 2px;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .carousel-item-serie {
+            font-size: 10px; color: #888; display: block; margin-bottom: 5px;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+            font-style: italic;
+        }
+        .carousel-item-ubicacions {
+            display: inline-block;
+            color: var(--primary);
+            font-size: 10px;
+            font-weight: bold;
+            text-decoration: none;
+            letter-spacing: 0.03em;
+        }
+        .carousel-item-ubicacions:hover { text-decoration: underline; }
+
+        .custom-marker {
+            width: 32px; height: 32px; border-radius: 50%; border: 2px solid white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3); background-size: cover; background-position: center;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        
+        .marker-active { 
+            transform: scale(1.4); 
+            border-color: var(--primary); 
+            box-shadow: 0 0 20px 8px rgba(66, 133, 244, 0.6);
+            z-index: 999 !important; 
+        }
+
+        .popup-card { text-align: center; width: 160px; }
+        .popup-card img { width: 100%; border-radius: 8px; margin-top: 8px; height: 100px; object-fit: cover; }
+        .btn-route { background: var(--primary); color: white !important; padding: 8px 12px; border-radius: 20px; text-decoration: none; font-size: 11px; display: block; margin-top: 8px; }
+
+        .nav-arrow { pointer-events: auto; background: white; border: none; width: 35px; height: 35px; border-radius: 50%; box-shadow: 0 2px 10px rgba(0,0,0,0.2); cursor: pointer; position: absolute; z-index: 2001; }
+        .nav-prev { left: 5px; } .nav-next { right: 5px; }
+
+        /* Missatge de càrrega */
+        #loading-msg {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            z-index: 9999; background: white; padding: 20px 32px; border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15); font-size: 14px; color: #555;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="map"></div>
+    <div id="loading-msg">Carregant dades…</div>
+
+    <div class="carousel-wrapper">
+        <button class="nav-arrow nav-prev" onclick="scrollCarousel(-1)">‹</button>
+        <div class="carousel-container" id="carousel"></div>
+        <button class="nav-arrow nav-next" onclick="scrollCarousel(1)">›</button>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <script>
+        // ╔══════════════════════════════════════════════════════════════════════╗
+        // ║  DADES DE LES ARTISTES — edita aquí per afegir o modificar          ║
+        // ║                                                                      ║
+        // ║  Camps de cada artista:                                              ║
+        // ║    nom           → nom complet de l'artista                          ║
+        // ║    serie         → títol de la sèrie fotogràfica                     ║
+        // ║    foto          → URL de la foto de l'artista (targeta carrussel)   ║
+        // ║    ubicacionsUrl → URL de la pàgina d'ubicacions (enllaç a la card)  ║
+        // ║    obres[]       → llista de fotografies amb:                        ║
+        // ║      id          → identificador únic                                ║
+        // ║      titol       → títol o descripció de la fotografia               ║
+        // ║      coords      → [latitud, longitud] al mapa                       ║
+        // ║      img         → URL de la imatge de la fotografia                 ║
+        // ╚══════════════════════════════════════════════════════════════════════╝
+        const artistes =[
+  {
+    "nom": "La ciutat, en femení",
+    "serie": "Ubicació dels mupis",
+    "foto": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png",
+    "ubicacionsUrl": "#",
+    "obres": [
+      {
+        "id": "1",
+        "titol": "",
+        "coords": [
+          41.38146317351127,
+          2.18389907350816
+        ],
+        "adreca": "Pas de Sota Muralla",
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "2",
+        "titol": "",
+        "coords": [
+          41.373367506535374,
+          2.175817692999351
+        ],
+        "adreca": "Avinguda del Paral·lel",
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "3",
+        "titol": "",
+        "coords": [
+          41.38226504546801,
+          2.185786308132649
+        ],
+        "adreca": "Carrer del Doctor Aiguader 2-4",
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "4",
+        "titol": "",
+        "coords": [
+          41.37411870665286,
+          2.176180285159054
+        ],
+        "adreca": "Plaça de les Drassanes",
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "5",
+        "titol": "",
+        "coords": [
+          41.385775615112586,
+          2.1947636833153648
+        ],
+        "adreca": "Carrer de Trelawany 6",
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "6",
+        "titol": "",
+        "coords": [
+          41.37542891649228,
+          2.1637130075581923
+        ],
+        "adreca": "Avinguda del Paral·lel 114",
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "7",
+        "titol": "",
+        "coords": [
+          41.40758889667793,
+          2.171939625646467
+        ],
+        "adreca": "Carrer de la Indústria 116",
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "8",
+        "titol": "",
+        "coords": [
+          41.39869502710705,
+          2.1700738103065844
+        ],
+        "adreca": "Passeig de Sant Joan 93",
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "9",
+        "titol": "",
+        "coords": [
+          41.39246124163908,
+          2.170751039141215
+        ],
+        "adreca": "Carrer de Roger de Llúria 38",
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "10",
+        "titol": "",
+        "coords": [
+          41.3893378542779,
+          2.1578475103062287
+        ],
+        "adreca": "Carrer d'Aribau 73",
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "11",
+        "titol": "",
+        "coords": [
+          41.385917362747485,
+          2.1533368544804956
+        ],
+        "adreca": "Carrer del Comte d'Urgell 127",
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "12",
+        "titol": "",
+        "coords": [
+          41.39378289466254,
+          2.1711248103063894
+        ],
+        "adreca": "Carrer de la Diputació 321",
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "13",
+        "titol": "",
+        "coords": [
+          41.393264787927976,
+          2.1618643833156583
+        ],
+        "adreca": "Carrer de Mallorca 244",
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "14",
+        "titol": "",
+        "coords": [
+          41.389362503372915,
+          2.172226967975983
+        ],
+        "adreca": "Plaça d'Urquinaona 1",
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "15",
+        "titol": "",
+        "coords": [
+          41.37224609659436,
+          2.144657739140447
+        ],
+        "adreca": "Gran Via de les Corts Catalanes 291",
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "16",
+        "titol": "",
+        "coords": [
+          41.365118960771426,
+          2.135419278492723
+        ],
+        "adreca": "Plaça de Cerdà",
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "17",
+        "titol": "",
+        "coords": [
+          41.365118960771426,
+          2.135419278492723
+        ],
+        "adreca": "Avinguda de l'Estadi 50",
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "18",
+        "titol": "",
+        "coords": [
+          41.371695792594764,
+          2.1739116679753026
+        ],
+        "adreca": "Passeig de Josep Carner 48",
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "19",
+        "titol": "",
+        "coords": [
+          41.378971630387205,
+          2.128657540984884
+        ],
+        "adreca": "Avinguda de Madrid 114",
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "20",
+        "titol": "",
+        "coords": [
+          41.38423426608489,
+          2.1407525833152823
+        ],
+        "adreca": "Carrer de Berlín 58",
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "21",
+        "titol": "",
+        "coords": [
+          41.38911335158752,
+          2.1269036679759545
+        ],
+        "adreca": "Avinguda Diagonal 666",
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "22",
+        "titol": "",
+        "coords": [
+          41.386905959221316,
+          2.1423756949666344
+        ],
+        "adreca": "Avinguda de Josep Tarradellas 91",
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "23",
+        "titol": "",
+        "coords": [
+          41.38565416417187,
+          2.1140285544804533
+        ],
+        "adreca": "Avinguda Diagonal 695-701",
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "24",
+        "titol": "",
+        "coords": [
+          41.39520628817787,
+          2.113671739141347
+        ],
+        "adreca": "Carrer del Bisbe Català 2",
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "25",
+        "titol": "",
+        "coords": [
+          41.39227964699304,
+          2.1436424526365774
+        ],
+        "adreca": "Avinguda Diagonal 485",
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "26",
+        "titol": "",
+        "coords": [
+          41.387717408931756,
+          2.1268797391410534
+        ],
+        "adreca": "Gran Via de Carles III 107",
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "27",
+        "titol": "",
+        "coords": [
+          41.39425628197035,
+          2.110662954480803
+        ],
+        "adreca": "Avinguda de Pearson 10-12",
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "28",
+        "titol": "",
+        "coords": [
+          41.395759286739846,
+          2.1254255526367243
+        ],
+        "adreca": "Plaça d'Artós",
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "29",
+        "titol": "",
+        "coords": [
+          41.4150571900033,
+          2.135941568498236
+        ],
+        "adreca": "Carrer d'Isaac Newton",
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "30",
+        "titol": "",
+        "coords": [
+          41.3976553930482,
+          2.131999352636773
+        ],
+        "adreca": "Via Augusta 261",
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "31",
+        "titol": "",
+        "coords": [
+          41.398145624745986,
+          2.133548996811196
+        ],
+        "adreca": "Via Augusta 260",
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "32",
+        "titol": "",
+        "coords": [
+          41.42021857778574,
+          2.1188972391423255
+        ],
+        "adreca": "Camí de Vallvidrera al Tibidabo 53",
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "33",
+        "titol": "",
+        "coords": [
+          41.401178406526284,
+          2.136152967976439
+        ],
+        "adreca": "Ronda del General Mitre 106",
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "34",
+        "titol": "",
+        "coords": [
+          41.41101471469927,
+          2.1474972968117148
+        ],
+        "adreca": "Passeig de la Mare de Déu del Coll 87",
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "35",
+        "titol": "",
+        "coords": [
+          41.426287272824105,
+          2.136194535478231
+        ],
+        "adreca": "Carrer de Natzaret",
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "36",
+        "titol": "",
+        "coords": [
+          41.421733219179885,
+          2.1634411391423805
+        ],
+        "adreca": "Carrer del Penyal 7",
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "37",
+        "titol": "",
+        "coords": [
+          41.424523567118435,
+          2.1472833814727474
+        ],
+        "adreca": "Carrer de Coll i Alentorn",
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "38",
+        "titol": "",
+        "coords": [
+          41.43979210055525,
+          2.1545604698221177
+        ],
+        "adreca": "Carretera d'Horta a Cerdanyola 34",
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "39",
+        "titol": "",
+        "coords": [
+          41.43136920620169,
+          2.150058154482268
+        ],
+        "adreca": "Carrer de Jorge Manrique 19",
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "40",
+        "titol": "",
+        "coords": [
+          41.413528848197956,
+          2.1703298409862097
+        ],
+        "adreca": "Ronda del Guinardó 80",
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "41",
+        "titol": "",
+        "coords": [
+          41.41477208330011,
+          2.169929794967711
+        ],
+        "adreca": "Carrer de Cartagena 384",
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "42",
+        "titol": "",
+        "coords": [
+          41.435080797462746,
+          2.1635075679777827
+        ],
+        "adreca": "Passeig de Fabra i Puig 405",
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "43",
+        "titol": "",
+        "coords": [
+          41.413320241066344,
+          2.1673360833164477
+        ],
+        "adreca": "Ronda del Guinardó 51",
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "44",
+        "titol": "",
+        "coords": [
+          41.44340800523805,
+          2.1856720544827675
+        ],
+        "adreca": "Avinguda Meridiana 505",
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "45",
+        "titol": "",
+        "coords": [
+          41.46122883587922,
+          2.1721209679788287
+        ],
+        "adreca": "Carrer de les Agudes 140",
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "46",
+        "titol": "",
+        "coords": [
+          41.43059254017871,
+          2.1767591256473535
+        ],
+        "adreca": "Passeig de Fabra i Puig 236",
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "47",
+        "titol": "",
+        "coords": [
+          41.43820592119944,
+          2.173795683317407
+        ],
+        "adreca": "Passeig de Valldaura 220",
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "48",
+        "titol": "",
+        "coords": [
+          41.445120242820096,
+          2.174486952638654
+        ],
+        "adreca": "Via Favència 173",
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "49",
+        "titol": "",
+        "coords": [
+          41.44014790240707,
+          2.1632785941695856
+        ],
+        "adreca": "Plaça de Karl Marx",
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "50",
+        "titol": "",
+        "coords": [
+          41.442545892730124,
+          2.1867539679780736
+        ],
+        "adreca": "Avinguda Meridiana 574",
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "51",
+        "titol": "",
+        "coords": [
+         41.440260870967045, 
+         2.20762791030821243
+        ],
+        "adreca": "Passeig del Guayaquil 1",
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "52",
+        "titol": "",
+        "coords": [
+          41.427401115543844,
+          2.1776631103077286
+        ],
+        "adreca": "Carrer de Felip II 231",
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "53",
+        "titol": "",
+        "coords": [
+          41.44626406589329,
+          2.193344325647998
+        ],
+        "adreca": "Passeig de Santa Coloma 46",
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "54",
+        "titol": "",
+        "coords": [
+          41.435644782980646,
+          2.2048168544824325
+        ],
+        "adreca": "Passeig d'Enric Sanchis 2",
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "55",
+        "titol": "",
+        "coords": [
+          41.41526258196328,
+          2.1942607544816464
+        ],
+        "adreca": "Carrer del Bac de Roda 196",
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "56",
+        "titol": "",
+        "coords": [
+          41.40997451676095,
+          2.1938027103070707
+        ],
+        "adreca": "Carrer de Bilbao 205",
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "57",
+        "titol": "",
+        "coords": [
+          41.409283618130104,
+          2.215646881472137
+        ],
+        "adreca": "Carrer de Josep Pla 32",
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "58",
+        "titol": "",
+        "coords": [
+          41.41036532810532,
+          2.2123791544814377
+        ],
+        "adreca": "Avinguda Diagonal 42",
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "59",
+        "titol": "",
+        "coords": [
+          41.41405745476289,
+          2.202079954481607
+        ],
+        "adreca": "Carrer de la Selva de Mar 167",
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "60",
+        "titol": "",
+        "coords": [
+          41.40464647457934,
+          2.206901881471973
+        ],
+        "adreca": "Carrer de Llull 268",
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "61",
+        "titol": "",
+        "coords": [
+          41.396115834133596,
+          2.1913970391413984
+        ],
+        "adreca": "Carrer del Pallars 110",
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "62",
+        "titol": "",
+        "coords": [
+          41.427135582744555,
+          2.206693039142583
+        ],
+        "adreca": "Via Trajana 24",
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "63",
+        "titol": "",
+        "coords": [
+          41.40160773807226,
+          2.1911171679764516
+        ],
+        "adreca": "Carrer de Tànger 67",
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "64",
+        "titol": "",
+        "coords": [
+          41.40806700789115,
+          2.186532854481337
+        ],
+        "adreca": "Avinguda Meridiana 111",
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "65",
+        "titol": "",
+        "coords": [
+          41.3923075933013,
+          2.198500096810993
+        ],
+        "adreca": "Avinguda d'Icària 174",
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      },
+      {
+        "id": "66",
+        "titol": "",
+        "coords": [
+          41.39120424965611,
+          2.2016381833155743
+        ],
+        "adreca": "Passeig Marítim de la Nova Icària 65",
+        "img": "https://raw.githubusercontent.com/eloigc/CiutatEnFemeni/main/portadaMapa.png"
+      }
+    ]
+  }
+];
+        // ══════════════════════════════════════════════════════════════════════
+
+        const map = L.map('map', { zoomControl: false, tap: false }).setView([41.390, 2.170], 13);
+        L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {attribution: '© OpenStreetMap contributors'}).addTo(map);
+
+        const carousel = document.getElementById('carousel');
+        let allMarkers = [];
+
+        function renderArtistes() {
+            artistes.forEach((artista, aIdx) => {
+                artista.markers = [];
+                artista.obres.forEach((obra) => {
+                    const icon = L.divIcon({
+                        className: 'custom-div-icon',
+                        html: `<div class="custom-marker" style="background-image: url('${obra.img}');"></div>`,
+                        iconSize: [32, 32], iconAnchor: [16, 16]
+                    });
+                    
+                    const m = L.marker(obra.coords, { icon: icon }).addTo(map);
+                    
+                    const popupContent = `
+                        <div class="popup-card">
+                            <strong>${obra.id}.- ${artista.nom}</strong><br>
+                            <strong>${obra.adreca}</strong><br>
+                           <!-- <small>${obra.titol}</small> --> 
+                            <img src="${obra.img}">
+                            <a href="https://www.google.com/maps/dir/?api=1&destination=${obra.coords[0]},${obra.coords[1]}" target="_blank" class="btn-route">Com arribar</a>
+                        </div>
+                    `;
+
+                    m.bindPopup(popupContent, { 
+                        offset: [0, -10],
+                        autoPan: true,
+                        autoPanPadding: L.point(50, 150)
+                    });
+                    
+                    m.on('click', () => {
+                        seleccionarArtista(aIdx, false);
+                    });
+
+                    artista.markers.push(m);
+                    allMarkers.push(m);
+                });
+
+                // ── Targeta de l'artista al carrussel ──────────────────────────
+                const serieText = artista.serie ? artista.serie : '&nbsp;';
+                const ubicUrl   = artista.ubicacionsUrl || '#';
+                const numUbic   = artista.obres.length;
+
+                const item = document.createElement('div');
+                item.className = 'carousel-item';
+                item.innerHTML = `
+                    <img src="${artista.foto || artista.obres[0].img}" alt="${artista.nom}">
+                    <div class="carousel-item-info">
+                        <span class="carousel-item-nom">${artista.nom}</span>
+                        <span class="carousel-item-serie">${serieText}</span>
+                        <a class="carousel-item-ubicacions"
+                           href="${ubicUrl}"
+                           target="_blank"
+                           onclick="event.stopPropagation();">
+                            ${numUbic} UBICACIONS
+                        </a>
+                    </div>
+                `;
+                item.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    seleccionarArtista(aIdx, true);
+                });
+                carousel.appendChild(item);
+                artista.element = item;
+            });
+        }
+
+        function seleccionarArtista(index, moveMap) {
+            const artista = artistes[index];
+            
+            document.querySelectorAll('.carousel-item').forEach(el => el.classList.remove('active'));
+            artista.element.classList.add('active');
+            
+            artista.element.scrollIntoView({ 
+                behavior: 'smooth', 
+                inline: 'center', 
+                block: 'nearest' 
+            });
+
+            document.querySelectorAll('.custom-marker').forEach(el => el.classList.remove('marker-active'));
+            artista.markers.forEach(m => {
+                const elementHtml = m.getElement().querySelector('.custom-marker');
+                if (elementHtml) elementHtml.classList.add('marker-active');
+            });
+
+            if (moveMap) {
+                const group = new L.featureGroup(artista.markers);
+                map.fitBounds(group.getBounds(), { padding: [100, 200], maxZoom: 15 });
+            }
+        }
+
+        function scrollCarousel(dir) {
+            carousel.scrollBy({ left: dir * 200, behavior: 'smooth' });
+        }
+
+        // ── Inicialització ────────────────────────────────────────────────────
+        document.getElementById('loading-msg').style.display = 'none';
+        renderArtistes();
+        setTimeout(() => seleccionarArtista(0, true), 500);
+    </script>
+</body>
+</html>
